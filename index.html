@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestaurantPro - Premium Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#B22222',
+                        secondary: '#FFD700',
+                        dark: '#333333',
+                        light: '#F8F8F8'
+                    },
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        .scrollable {
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollable::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .scrollable::-webkit-scrollbar-thumb {
+            background: #B22222;
+            border-radius: 10px;
+        }
+        
+        .scrollable::-webkit-scrollbar-thumb:hover {
+            background: #8B0000;
+        }
+        
+        .order-card {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 8px 32px rgba(178, 34, 34, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #B22222, #8B0000);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(178, 34, 34, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .bounce-in {
+            animation: bounceIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .admin-dark {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            color: white;
+        }
+        
+        .status-pending { color: #F59E0B; }
+        .status-accepted { color: #10B981; }
+        .status-declined { color: #EF4444; }
+        
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            z-index: 50;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-nav { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-light min-h-full">
+    <!-- Notification Toast -->
+    <div id="notification" class="notification bg-white rounded-xl shadow-lg p-4 max-w-sm">
+        <div class="flex items-center">
+            <div id="notificationIcon" class="mr-3"></div>
+            <div>
+                <p id="notificationTitle" class="font-semibold text-dark"></p>
+                <p id="notificationMessage" class="text-sm text-gray-600"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass-effect border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-utensils text-primary text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold text-dark">RestaurantPro</h1>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <span id="userWelcome" class="text-dark font-medium text-xs sm:text-sm md:text-base"></span>
+                    <button id="loginBtn" class="btn-primary text-white px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </button>
+                    <button id="logoutBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap hidden">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full bounce-in">
+            <div class="text-center mb-8">
+                <i class="fas fa-utensils text-primary text-4xl mb-4"></i>
+                <h2 class="text-2xl font-bold text-dark">Welcome Back</h2>
+                <p class="text-gray-600">Sign in to your account</p>
+            </div>
+            
+            <div class="flex space-x-4 mb-6">
+                <button id="adminTabBtn" class="flex-1 py-3 px-4 rounded-xl bg-primary text-white font-medium">
+                    Admin Login
+                </button>
+                <button id="customerTabBtn" class="flex-1 py-3 px-4 rounded-xl bg-gray-200 text-gray-700 font-medium">
+                    Customer
+                </button>
+            </div>
+
+            <!-- Admin Login Form -->
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Email Address</label>
+                    <input type="email" id="adminEmail" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" placeholder="hassan7534.j@gmail.com" required>
+                </div>
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="adminPassword" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="w-full btn-primary text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base">
+                    <i class="fas fa-shield-alt mr-1 sm:mr-2"></i>Login as Admin
+                </button>
+            </form>
+
+            <!-- Customer Login Form -->
+            <div id="customerLoginForm" class="hidden space-y-4">
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Your Name</label>
+                    <input type="text" id="customerName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" placeholder="Enter your name" required>
+                </div>
+                <button type="button" id="customerLoginBtn" class="w-full btn-secondary py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base">
+                    <i class="fas fa-user mr-1 sm:mr-2"></i>Continue as Customer
+                </button>
+            </div>
+
+            <button id="closeLoginModal" class="w-full mt-4 text-gray-500 hover:text-gray-700 py-2">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="text-center fade-in">
+            <div class="bg-white rounded-2xl card-shadow p-12 mb-8">
+                <i class="fas fa-utensils text-primary text-6xl mb-6"></i>
+                <h1 class="text-4xl font-bold text-dark mb-4">RestaurantPro</h1>
+                <p class="text-xl text-gray-600 mb-8">Premium Restaurant Management System</p>
+                
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 p-8 rounded-2xl">
+                        <i class="fas fa-crown text-primary text-3xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-dark mb-4">Admin Control</h3>
+                        <ul class="text-gray-700 space-y-2 text-left">
+                            <li><i class="fas fa-check text-primary mr-2"></i>Manage all dishes & menu</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Accept/decline orders</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Real-time notifications</li>
+                            <li><i class="fas fa-check text-primary mr-2"></i>Analytics dashboard</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 rounded-2xl">
+                        <i class="fas fa-users text-secondary text-3xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-dark mb-4">Customer Experience</h3>
+                        <ul class="text-gray-700 space-y-2 text-left">
+                            <li><i class="fas fa-check text-secondary mr-2"></i>Browse elegant menu</li>
+                            <li><i class="fas fa-check text-secondary mr-2"></i>One-tap ordering</li>
+                            <li><i class="fas fa-check text-secondary mr-2"></i>Real-time order tracking</li>
+                            <li><i class="fas fa-check text-secondary mr-2"></i>Mobile-friendly design</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminPanel" class="hidden fade-in">
+            <div class="admin-dark rounded-2xl card-shadow p-8 mb-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2">Admin Dashboard</h2>
+                        <p class="text-gray-300">Manage your restaurant with full control</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <div class="bg-primary/20 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-secondary" id="totalOrders">0</div>
+                            <div class="text-sm text-gray-300">Total Orders</div>
+                        </div>
+                        <div class="bg-green-500/20 rounded-xl p-4 text-center">
+                            <div class="text-2xl font-bold text-green-400" id="acceptedOrders">0</div>
+                            <div class="text-sm text-gray-300">Accepted</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="flex space-x-4 mb-8 border-b border-gray-600">
+                    <button id="productsTab" class="px-6 py-3 font-medium text-secondary border-b-2 border-secondary">
+                        <i class="fas fa-utensils mr-2"></i>Products
+                    </button>
+                    <button id="ordersTab" class="px-6 py-3 font-medium text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-clipboard-list mr-2"></i>Orders
+                    </button>
+                </div>
+
+                <!-- Products Section -->
+                <div id="productsSection">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold">Manage Dishes</h3>
+                        <button id="addProductBtn" class="btn-secondary text-dark px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap">
+                            <i class="fas fa-plus mr-2"></i>Add New Dish
+                        </button>
+                    </div>
+                    <div id="adminProductsList" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 scrollable max-h-96 overflow-y-auto pr-2"></div>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="ordersSection" class="hidden">
+                    <h3 class="text-xl font-bold mb-6">Order Management</h3>
+                    <div id="adminOrdersList" class="space-y-4 scrollable max-h-96 overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Panel -->
+        <div id="customerPanel" class="hidden fade-in">
+            <!-- Featured Section -->
+            <div class="bg-gradient-to-r from-primary to-red-800 rounded-2xl text-white p-8 mb-8">
+                <h2 class="text-3xl font-bold mb-2">Welcome to Our Restaurant</h2>
+                <p class="text-red-100 mb-4">Discover our delicious menu and place your order</p>
+                <div class="flex items-center">
+                    <i class="fas fa-star text-secondary mr-1"></i>
+                    <i class="fas fa-star text-secondary mr-1"></i>
+                    <i class="fas fa-star text-secondary mr-1"></i>
+                    <i class="fas fa-star text-secondary mr-1"></i>
+                    <i class="fas fa-star text-secondary mr-2"></i>
+                    <span class="text-red-100">4.9 Rating • 1000+ Orders</span>
+                </div>
+            </div>
+
+            <!-- Menu Section -->
+            <div class="bg-white rounded-2xl card-shadow p-8 mb-8">
+                <h3 class="text-2xl font-bold text-dark mb-6">Our Menu</h3>
+                <div id="customerProductsList" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 scrollable"></div>
+            </div>
+
+            <!-- Orders Section -->
+            <div class="bg-white rounded-2xl card-shadow p-8">
+                <h3 class="text-2xl font-bold text-dark mb-6">My Orders</h3>
+                <div id="customerOrdersList" class="space-y-4 scrollable"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-lg w-full slide-up max-h-[90vh] overflow-y-auto">
+            <h2 id="productModalTitle" class="text-2xl font-bold text-dark mb-6 sticky top-0 bg-white pb-4">Add New Dish</h2>
+            <form id="productForm" class="space-y-4">
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Restaurant Name</label>
+                    <input type="text" id="restaurantName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" required>
+                </div>
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Dish Name</label>
+                    <input type="text" id="dishName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" required>
+                </div>
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Description</label>
+                    <textarea id="dishDescription" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" rows="3" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Price ($)</label>
+                    <input type="number" id="dishPrice" step="0.01" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary" required>
+                </div>
+                <div>
+                    <label class="block text-dark text-sm font-medium mb-2">Image URL (optional)</label>
+                    <input type="url" id="dishImage" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary">
+                </div>
+                <div class="flex space-x-4 pt-6 mt-6 sticky bottom-0 bg-white border-t border-gray-200">
+                    <button type="submit" class="flex-1 btn-primary text-white py-3 px-4 rounded-xl font-medium whitespace-nowrap">
+                        <i class="fas fa-save mr-2"></i>Save Dish
+                    </button>
+                    <button type="button" id="closeProductModal" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-xl font-medium whitespace-nowrap">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Database Management
+        class Database {
+            static getProducts() {
+                return JSON.parse(localStorage.getItem('rp_products') || '[]');
+            }
+            
+            static saveProducts(products) {
+                localStorage.setItem('rp_products', JSON.stringify(products));
+            }
+            
+            static getOrders() {
+                return JSON.parse(localStorage.getItem('rp_orders') || '[]');
+            }
+            
+            static saveOrders(orders) {
+                localStorage.setItem('rp_orders', JSON.stringify(orders));
+            }
+        }
+
+        // Authentication System
+        class Auth {
+            static loginAdmin(email, password) {
+                // Admin credentials
+                if (email === 'hassan7534.j@gmail.com' && password === 'admin123') {
+                    sessionStorage.setItem('rp_user_role', 'admin');
+                    sessionStorage.setItem('rp_user_email', email);
+                    return { success: true, role: 'admin' };
+                }
+                return { success: false, message: 'Invalid credentials' };
+            }
+            
+            static loginCustomer(name) {
+                const customerId = 'customer_' + Date.now();
+                sessionStorage.setItem('rp_user_role', 'customer');
+                sessionStorage.setItem('rp_user_name', name);
+                sessionStorage.setItem('rp_customer_id', customerId);
+                return { success: true, role: 'customer' };
+            }
+            
+            static getCurrentUser() {
+                return {
+                    role: sessionStorage.getItem('rp_user_role'),
+                    email: sessionStorage.getItem('rp_user_email'),
+                    name: sessionStorage.getItem('rp_user_name'),
+                    customerId: sessionStorage.getItem('rp_customer_id')
+                };
+            }
+            
+            static isAdmin() {
+                return sessionStorage.getItem('rp_user_role') === 'admin';
+            }
+            
+            static isLoggedIn() {
+                return sessionStorage.getItem('rp_user_role') !== null;
+            }
+            
+            static logout() {
+                sessionStorage.clear();
+            }
+        }
+
+        // Notification System
+        class NotificationManager {
+            static show(title, message, type = 'info') {
+                const notification = document.getElementById('notification');
+                const icon = document.getElementById('notificationIcon');
+                const titleEl = document.getElementById('notificationTitle');
+                const messageEl = document.getElementById('notificationMessage');
+                
+                const icons = {
+                    success: '<i class="fas fa-check-circle text-green-500 text-xl"></i>',
+                    error: '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>',
+                    info: '<i class="fas fa-info-circle text-blue-500 text-xl"></i>',
+                    warning: '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>'
+                };
+                
+                icon.innerHTML = icons[type] || icons.info;
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 4000);
+            }
+        }
+
+        // Application State
+        let currentEditingProduct = null;
+        let products = Database.getProducts();
+        let orders = Database.getOrders();
+
+        // Initialize sample data
+        if (products.length === 0) {
+            products = [
+                {
+                    id: 1,
+                    restaurantName: "Bella Vista",
+                    dishName: "Truffle Risotto",
+                    description: "Creamy arborio rice with black truffle, parmesan, and fresh herbs",
+                    price: 28.99,
+                    image: ""
+                },
+                {
+                    id: 2,
+                    restaurantName: "Bella Vista",
+                    dishName: "Grilled Salmon",
+                    description: "Atlantic salmon with lemon butter sauce and seasonal vegetables",
+                    price: 32.50,
+                    image: ""
+                },
+                {
+                    id: 3,
+                    restaurantName: "Bella Vista",
+                    dishName: "Chocolate Soufflé",
+                    description: "Rich dark chocolate soufflé with vanilla ice cream",
+                    price: 12.99,
+                    image: ""
+                }
+            ];
+            Database.saveProducts(products);
+        }
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const customerLoginBtn = document.getElementById('customerLoginBtn');
+        const adminTabBtn = document.getElementById('adminTabBtn');
+        const customerTabBtn = document.getElementById('customerTabBtn');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const userWelcome = document.getElementById('userWelcome');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const adminPanel = document.getElementById('adminPanel');
+        const customerPanel = document.getElementById('customerPanel');
+        const productModal = document.getElementById('productModal');
+        const productForm = document.getElementById('productForm');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const closeProductModal = document.getElementById('closeProductModal');
+        const productsTab = document.getElementById('productsTab');
+        const ordersTab = document.getElementById('ordersTab');
+        const productsSection = document.getElementById('productsSection');
+        const ordersSection = document.getElementById('ordersSection');
+
+        // Event Listeners
+        loginBtn.addEventListener('click', () => {
+            loginModal.classList.remove('hidden');
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            Auth.logout();
+            NotificationManager.show('Logged Out', 'You have been successfully logged out', 'info');
+            updateUI();
+        });
+
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+        });
+
+        adminTabBtn.addEventListener('click', () => {
+            adminTabBtn.classList.add('bg-primary', 'text-white');
+            adminTabBtn.classList.remove('bg-gray-200', 'text-gray-700');
+            customerTabBtn.classList.add('bg-gray-200', 'text-gray-700');
+            customerTabBtn.classList.remove('bg-primary', 'text-white');
+            document.getElementById('adminLoginForm').classList.remove('hidden');
+            document.getElementById('customerLoginForm').classList.add('hidden');
+        });
+
+        customerTabBtn.addEventListener('click', () => {
+            customerTabBtn.classList.add('bg-primary', 'text-white');
+            customerTabBtn.classList.remove('bg-gray-200', 'text-gray-700');
+            adminTabBtn.classList.add('bg-gray-200', 'text-gray-700');
+            adminTabBtn.classList.remove('bg-primary', 'text-white');
+            document.getElementById('customerLoginForm').classList.remove('hidden');
+            document.getElementById('adminLoginForm').classList.add('hidden');
+        });
+
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            const result = Auth.loginAdmin(email, password);
+            if (result.success) {
+                loginModal.classList.add('hidden');
+                NotificationManager.show('Welcome Admin', 'Successfully logged in to admin panel', 'success');
+                updateUI();
+            } else {
+                NotificationManager.show('Login Failed', 'Invalid email or password', 'error');
+            }
+        });
+
+        customerLoginBtn.addEventListener('click', () => {
+            const name = document.getElementById('customerName').value;
+            if (name.trim()) {
+                Auth.loginCustomer(name);
+                loginModal.classList.add('hidden');
+                NotificationManager.show('Welcome', `Hello ${name}! Browse our menu and place orders`, 'success');
+                updateUI();
+            } else {
+                NotificationManager.show('Name Required', 'Please enter your name to continue', 'warning');
+            }
+        });
+
+        addProductBtn.addEventListener('click', () => {
+            if (!Auth.isAdmin()) return;
+            currentEditingProduct = null;
+            document.getElementById('productModalTitle').textContent = 'Add New Dish';
+            productForm.reset();
+            productModal.classList.remove('hidden');
+        });
+
+        closeProductModal.addEventListener('click', () => {
+            productModal.classList.add('hidden');
+        });
+
+        productForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!Auth.isAdmin()) return;
+            
+            const productData = {
+                restaurantName: document.getElementById('restaurantName').value,
+                dishName: document.getElementById('dishName').value,
+                description: document.getElementById('dishDescription').value,
+                price: parseFloat(document.getElementById('dishPrice').value),
+                image: document.getElementById('dishImage').value
+            };
+            
+            if (currentEditingProduct) {
+                const index = products.findIndex(p => p.id === currentEditingProduct.id);
+                products[index] = { ...currentEditingProduct, ...productData };
+                NotificationManager.show('Dish Updated', 'Dish has been successfully updated', 'success');
+            } else {
+                const newProduct = {
+                    id: Date.now(),
+                    ...productData
+                };
+                products.push(newProduct);
+                NotificationManager.show('Dish Added', 'New dish has been added to the menu', 'success');
+            }
+            
+            Database.saveProducts(products);
+            productModal.classList.add('hidden');
+            renderAdminProducts();
+            renderCustomerProducts();
+        });
+
+        // Tab navigation
+        productsTab.addEventListener('click', () => {
+            productsTab.classList.add('text-secondary', 'border-b-2', 'border-secondary');
+            productsTab.classList.remove('text-gray-400');
+            ordersTab.classList.remove('text-secondary', 'border-b-2', 'border-secondary');
+            ordersTab.classList.add('text-gray-400');
+            productsSection.classList.remove('hidden');
+            ordersSection.classList.add('hidden');
+        });
+
+        ordersTab.addEventListener('click', () => {
+            ordersTab.classList.add('text-secondary', 'border-b-2', 'border-secondary');
+            ordersTab.classList.remove('text-gray-400');
+            productsTab.classList.remove('text-secondary', 'border-b-2', 'border-secondary');
+            productsTab.classList.add('text-gray-400');
+            ordersSection.classList.remove('hidden');
+            productsSection.classList.add('hidden');
+            renderAdminOrders();
+        });
+
+        // Render Functions
+        function renderAdminProducts() {
+            const container = document.getElementById('adminProductsList');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-white/10 rounded-xl p-6 hover:bg-white/20 transition-all duration-300 flex flex-col min-h-[280px]';
+                productCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-white">${product.dishName}</h4>
+                            <p class="text-secondary text-sm font-medium">${product.restaurantName}</p>
+                        </div>
+                        <span class="text-xl font-bold text-secondary">$${product.price.toFixed(2)}</span>
+                    </div>
+                    <p class="text-gray-300 mb-4 text-sm flex-grow">${product.description}</p>
+                    ${product.image ? `<img src="${product.image}" alt="${product.dishName}" class="w-full h-32 object-cover rounded-lg mb-4" onerror="this.style.display='none';">` : ''}
+                    <div class="flex space-x-2 mt-auto">
+                        <button onclick="editProduct(${product.id})" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                            <i class="fas fa-edit mr-2"></i>Edit Dish
+                        </button>
+                        <button onclick="deleteProduct(${product.id})" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                            <i class="fas fa-trash mr-2"></i>Delete
+                        </button>
+                    </div>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+
+        function renderCustomerProducts() {
+            const container = document.getElementById('customerProductsList');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1';
+                productCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-dark">${product.dishName}</h4>
+                            <p class="text-primary text-sm font-medium">${product.restaurantName}</p>
+                        </div>
+                        <span class="text-xl font-bold text-secondary">$${product.price.toFixed(2)}</span>
+                    </div>
+                    <p class="text-gray-600 mb-4 text-sm">${product.description}</p>
+                    ${product.image ? `<img src="${product.image}" alt="${product.dishName}" class="w-full h-32 object-cover rounded-lg mb-4" onerror="this.style.display='none';">` : ''}
+                    <button onclick="orderProduct(${product.id})" class="w-full btn-primary text-white py-3 px-4 rounded-xl font-medium transition-all">
+                        <i class="fas fa-shopping-cart mr-2"></i>Order Now
+                    </button>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+
+        function renderAdminOrders() {
+            const container = document.getElementById('adminOrdersList');
+            container.innerHTML = '';
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">No orders received yet.</p>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const product = products.find(p => p.id === order.productId);
+                if (!product) return;
+                
+                const orderCard = document.createElement('div');
+                orderCard.className = 'bg-white/10 rounded-xl p-6 border border-gray-600 order-card';
+                orderCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-white">${product.dishName}</h4>
+                            <p class="text-secondary text-sm">${product.restaurantName}</p>
+                            <p class="text-xs text-gray-400">Order #${order.id}</p>
+                            <p class="text-xs text-gray-400">Customer: ${order.customerName}</p>
+                            <p class="text-xs text-gray-400">${new Date(order.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-bold text-secondary">$${product.price.toFixed(2)}</span>
+                            <p class="text-sm status-${order.status} font-medium">
+                                ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </p>
+                        </div>
+                    </div>
+                    ${order.status === 'pending' ? `
+                        <div class="flex space-x-2 mt-4">
+                            <button onclick="updateOrderStatus(${order.id}, 'accepted')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                                <i class="fas fa-check mr-2"></i>Accept Order
+                            </button>
+                            <button onclick="updateOrderStatus(${order.id}, 'declined')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                                <i class="fas fa-times mr-2"></i>Decline Order
+                            </button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(orderCard);
+            });
+        }
+
+        function renderCustomerOrders() {
+            const container = document.getElementById('customerOrdersList');
+            const currentUser = Auth.getCurrentUser();
+            const userOrders = orders.filter(order => order.customerId === currentUser.customerId);
+            
+            container.innerHTML = '';
+            
+            if (userOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-500">You haven't placed any orders yet.</p>
+                        <p class="text-sm text-gray-400">Browse our menu above to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            userOrders.forEach(order => {
+                const product = products.find(p => p.id === order.productId);
+                if (!product) return;
+                
+                const orderCard = document.createElement('div');
+                orderCard.className = 'bg-gray-50 rounded-xl p-6 border border-gray-200';
+                orderCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg text-dark">${product.dishName}</h4>
+                            <p class="text-primary text-sm">${product.restaurantName}</p>
+                            <p class="text-xs text-gray-500">Order #${order.id}</p>
+                            <p class="text-xs text-gray-500">${new Date(order.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-bold text-secondary">$${product.price.toFixed(2)}</span>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-circle text-xs status-${order.status} mr-1"></i>
+                                <p class="text-sm status-${order.status} font-medium">
+                                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(orderCard);
+            });
+        }
+
+        function updateAnalytics() {
+            const totalOrders = orders.length;
+            const acceptedOrders = orders.filter(o => o.status === 'accepted').length;
+            
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('acceptedOrders').textContent = acceptedOrders;
+        }
+
+        // Global Functions
+        window.editProduct = function(productId) {
+            if (!Auth.isAdmin()) return;
+            
+            currentEditingProduct = products.find(p => p.id === productId);
+            document.getElementById('productModalTitle').textContent = 'Edit Dish';
+            document.getElementById('restaurantName').value = currentEditingProduct.restaurantName;
+            document.getElementById('dishName').value = currentEditingProduct.dishName;
+            document.getElementById('dishDescription').value = currentEditingProduct.description;
+            document.getElementById('dishPrice').value = currentEditingProduct.price;
+            document.getElementById('dishImage').value = currentEditingProduct.image || '';
+            productModal.classList.remove('hidden');
+        };
+
+        window.deleteProduct = function(productId) {
+            console.log('Delete function called for product ID:', productId);
+            
+            if (!Auth.isAdmin()) {
+                NotificationManager.show('Access Denied', 'Only admin can delete dishes', 'error');
+                return false;
+            }
+            
+            const product = products.find(p => p.id == productId);
+            if (!product) {
+                NotificationManager.show('Error', 'Dish not found', 'error');
+                return false;
+            }
+            
+            const confirmDelete = confirm(`⚠️ DELETE CONFIRMATION ⚠️\n\nAre you sure you want to permanently delete:\n"${product.dishName}"\n\nThis action cannot be undone and will remove:\n• The dish from the menu\n• All related orders\n\nClick OK to delete or Cancel to keep the dish.`);
+            
+            if (confirmDelete) {
+                try {
+                    // Remove the product from the array
+                    const originalLength = products.length;
+                    products = products.filter(p => p.id != productId);
+                    
+                    if (products.length === originalLength) {
+                        NotificationManager.show('Error', 'Failed to delete dish', 'error');
+                        return false;
+                    }
+                    
+                    // Save to database
+                    Database.saveProducts(products);
+                    
+                    // Remove any orders for this product
+                    orders = orders.filter(o => o.productId != productId);
+                    Database.saveOrders(orders);
+                    
+                    // Re-render all product lists
+                    renderAdminProducts();
+                    renderCustomerProducts();
+                    updateAnalytics();
+                    
+                    NotificationManager.show('✅ Dish Deleted', `"${product.dishName}" has been permanently removed from the menu`, 'success');
+                    return true;
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    NotificationManager.show('Error', 'Failed to delete dish. Please try again.', 'error');
+                    return false;
+                }
+            }
+            return false;
+        };
+
+        window.orderProduct = function(productId) {
+            if (!Auth.isLoggedIn() || Auth.isAdmin()) return;
+            
+            const currentUser = Auth.getCurrentUser();
+            const product = products.find(p => p.id === productId);
+            const newOrder = {
+                id: Date.now(),
+                productId: productId,
+                customerId: currentUser.customerId,
+                customerName: currentUser.name,
+                status: 'pending',
+                timestamp: new Date().toISOString()
+            };
+            
+            orders.push(newOrder);
+            Database.saveOrders(orders);
+            renderCustomerOrders();
+            updateAnalytics();
+            
+            NotificationManager.show('Order Placed', `Your order for ${product.dishName} has been placed!`, 'success');
+        };
+
+        window.updateOrderStatus = function(orderId, status) {
+            if (!Auth.isAdmin()) return;
+            
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+            if (orderIndex !== -1) {
+                const order = orders[orderIndex];
+                const product = products.find(p => p.id === order.productId);
+                orders[orderIndex].status = status;
+                Database.saveOrders(orders);
+                renderAdminOrders();
+                updateAnalytics();
+                
+                const statusText = status === 'accepted' ? 'accepted' : 'declined';
+                NotificationManager.show('Order Updated', `Order for ${product.dishName} has been ${statusText}`, 'success');
+            }
+        };
+
+        // Update UI
+        function updateUI() {
+            const user = Auth.getCurrentUser();
+            
+            if (Auth.isLoggedIn()) {
+                loginBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                welcomeScreen.classList.add('hidden');
+                
+                if (Auth.isAdmin()) {
+                    userWelcome.textContent = `Welcome, Admin`;
+                    adminPanel.classList.remove('hidden');
+                    customerPanel.classList.add('hidden');
+                    renderAdminProducts();
+                    updateAnalytics();
+                } else {
+                    userWelcome.textContent = `Welcome, ${user.name}`;
+                    customerPanel.classList.remove('hidden');
+                    adminPanel.classList.add('hidden');
+                    renderCustomerProducts();
+                    renderCustomerOrders();
+                }
+            } else {
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                userWelcome.textContent = '';
+                welcomeScreen.classList.remove('hidden');
+                adminPanel.classList.add('hidden');
+                customerPanel.classList.add('hidden');
+            }
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b65f94618a2704',t:'MTc1OTkzNDIxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
